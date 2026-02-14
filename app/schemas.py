@@ -24,3 +24,11 @@ class ProposalSchema(BaseModel):
 
 class ApprovalRequest(BaseModel):
     approved: bool
+
+class EmailSchema(BaseModel):
+    id: str
+    from_: str
+    subject: str
+    body: str
+    thread_id: str
+    received_at: Optional[datetime] = None

@@ -2,16 +2,29 @@
 import json
 from typing import Dict, Any
 from langchain_core.messages import SystemMessage, HumanMessage
-from integrations.openai_service import LLMService
+from integrations.llm_wrapper import UnifiedLLM
 
 class AgentNodes:
-    def __init__(self, llm: LLMService):
+    def __init__(self, llm: UnifiedLLM):
         self.llm = llm
     
+    def _clean_json(self, response: str) -> str:
+        """Clean markdown formatting from JSON response"""
+        response = response.strip()
+        if response.startswith("```json"):
+            response = response[7:]
+        if response.startswith("```"):
+            response = response[3:]
+        if response.endswith("```"):
+            response = response[:-3]
+        return response.strip()
+
     async def classify_email(self, state: Dict[str, Any]) -> Dict[str, Any]:
         """Node 1: Classify if business inquiry"""
         prompt = f"""
         Analyze this email and determine if it's a genuine business inquiry.
+        Be lenient. Short/informal emails like "I want an app" ARE valid inquiries.
+        Only reject obvious spam, promotions, or recruiting emails.
         
         Subject: {state['email_subject']}
         From: {state['email_from']}
@@ -25,21 +38,29 @@ class AgentNodes:
         }}
         """
         
+        response = None
         try:
             response = await self.llm.invoke(prompt)
-            result = json.loads(response)
+            result = json.loads(self._clean_json(response))
             
             state.update({
                 "is_valid_inquiry": result["is_valid"],
                 "confidence_score": result["confidence"],
+                "classification_reason": result.get("reason", "No reason provided"),
                 "current_step": "classified"
             })
         except Exception as e:
+            # Check if response was empty or blocked
+            if not response:
+                error_msg = "Empty response from LLM"
+            else:
+                error_msg = str(e)
+                
             state.update({
                 "is_valid_inquiry": False,
                 "confidence_score": 0.0,
                 "current_step": "classification_failed",
-                "error": str(e)
+                "error": error_msg
             })
         
         return state
@@ -65,7 +86,7 @@ class AgentNodes:
         
         try:
             response = await self.llm.invoke(prompt)
-            data = json.loads(response)
+            data = json.loads(self._clean_json(response))
             
             state.update({
                 **data,
@@ -102,7 +123,7 @@ class AgentNodes:
         
         try:
             response = await self.llm.invoke(prompt)
-            state["project_plan"] = json.loads(response)
+            state["project_plan"] = json.loads(self._clean_json(response))
             state["current_step"] = "planned"
         except:
             state["project_plan"] = {

@@ -1,9 +1,9 @@
 """API routes"""
 from fastapi import APIRouter, HTTPException
-from integrations.gmail_mcp import GmailMCP
+from integrations.standard_email import StandardEmailService
 from integrations.storage import StorageService
 from agent.graph import EmailAgentGraph
-from integrations.openai_service import LLMService
+from integrations.llm_wrapper import UnifiedLLM
 from app.schemas import ProposalSchema, ApprovalRequest
 
 router = APIRouter()
@@ -11,8 +11,8 @@ router = APIRouter()
 @router.post("/check-emails")
 async def check_emails():
     """Process unread emails"""
-    gmail = GmailMCP()
-    llm = LLMService()
+    gmail = StandardEmailService()
+    llm = UnifiedLLM()
     agent = EmailAgentGraph(llm)
     storage = StorageService()
     
@@ -54,7 +54,7 @@ async def get_pending_proposals():
 @router.post("/proposals/{proposal_id}/approve")
 async def approve_proposal(proposal_id: int, request: ApprovalRequest):
     storage = StorageService()
-    gmail = GmailMCP()
+    gmail = StandardEmailService()
     
     proposal = storage.get_proposal(proposal_id)
     if not proposal:
@@ -62,7 +62,16 @@ async def approve_proposal(proposal_id: int, request: ApprovalRequest):
     
     if request.approved:
         storage.approve_proposal(proposal_id)
-        await gmail.send_draft(proposal["draft_id"])
+        
+        # Fetch client to get email address
+        client = storage.get_client(proposal.client_id)
+        if client:
+            await gmail.send_email(
+                to=client.email,
+                subject=f"Proposal for {client.project_type}",
+                body=proposal.proposal_text
+            )
+            
         storage.mark_sent(proposal_id)
         return {"message": "Proposal approved and sent!"}
     else:

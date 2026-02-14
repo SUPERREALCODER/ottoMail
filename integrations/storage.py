@@ -1,6 +1,9 @@
 """Database storage service"""
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from datetime import datetime
 from app.models import SessionLocal, Client, Proposal
+from app.schemas import EmailSchema, ProposalSchema
 import json
 
 class StorageService:
@@ -8,6 +11,11 @@ class StorageService:
         self.db = SessionLocal()
     
     def create_client(self, state):
+        # Check if client already exists
+        existing_client = self.db.query(Client).filter(Client.email == state['email_from']).first()
+        if existing_client:
+            return existing_client.id
+            
         client = Client(
             name=state['client_name'],
             email=state['email_from'],
@@ -56,6 +64,9 @@ class StorageService:
     
     def get_proposal(self, proposal_id):
         return self.db.query(Proposal).filter(Proposal.id == proposal_id).first()
+
+    def get_client(self, client_id):
+        return self.db.query(Client).filter(Client.id == client_id).first()
     
     def approve_proposal(self, proposal_id):
         proposal = self.get_proposal(proposal_id)

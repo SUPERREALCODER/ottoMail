@@ -3,14 +3,14 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from app.api.routes import app as api_app
+from app.api.routes import router as api_router
 from app.models import init_db
 
 # Initialize
 init_db()
 app = FastAPI(title="Email AI Copilot MVP")
 
-app.mount("/api", api_app)
+app.include_router(api_router, prefix="/api")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/", response_class=HTMLResponse)

@@ -2,10 +2,10 @@
 from langgraph.graph import StateGraph, END
 from .state import EmailAgentState
 from .nodes import AgentNodes
-from integrations.openai_service import LLMService
+from integrations.llm_wrapper import UnifiedLLM
 
 class EmailAgentGraph:
-    def __init__(self, llm: LLMService):
+    def __init__(self, llm: UnifiedLLM):
         self.nodes = AgentNodes(llm)
         self.graph = self._build_graph()
     
