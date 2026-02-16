@@ -8,7 +8,7 @@ A private, local-first AI agent that helps you manage emails. It runs completely
     *   **Local Mode**: Runs `Meta-Llama-3-8B` locally (Private, Free, GPU-accelerated).
     *   **Gemini Mode**: Connects to Google's Gemini Flash/Pro (Faster, requires key).
 *   **Privacy First**: Emails are processed securely. Real emails are only sent when *you* click "Approve".
-*   **Modern Dashboard**: View pending proposals, edit drafts, and send with one click.
+*   **Modern Dashboard**: View pending proposals, edit drafts(soon), and send with one click.
 *   **Smart Parsing**: Filters out spam and identifies genuine business inquiries.
 
 ## 🏗️ Architecture
@@ -109,3 +109,7 @@ LLM_DEVICE=gpu
 *   **"Internal Server Error"**: Usually means an email has weird encoding. Check the terminal logs.
 *   **"Model Download Failed"**: Run `python scripts/force_download.py` to manually download the model.
 *   **GPU not working?**: The app automatically falls back to CPU or Mock mode if GPU fails.
+
+## Here is a visual working of the platform
+
+<video src="https://github.com/user-attachments/assets/660a5886-b8b4-47cd-bedd-98dcaacb00c8" autoplay loop muted playsinline width="500"></video>
